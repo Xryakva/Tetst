@@ -2,8 +2,8 @@ $ErrorActionPreference = "Continue"
 function Update-Path { $env:Path = [System.Environment]::GetEnvironmentVariable("Path","Machine") + ";" + [System.Environment]::GetEnvironmentVariable("Path","User") }
 
 Write-Host "Начинаем установку DreamWorld Bot..." -ForegroundColor Cyan
-Write-Host "Проверка Node.js..." -ForegroundColor Yellow
 
+# Проверяем и устанавливаем Node.js
 if (-not (Get-Command node -ErrorAction SilentlyContinue)) {
     Write-Host "Node.js не найден. Скачиваем и устанавливаем..." -ForegroundColor Yellow
     $nodeUrl = "https://nodejs.org/dist/v20.18.1/node-v20.18.1-x64.msi"
@@ -23,7 +23,7 @@ if (-not (Get-Command node -ErrorAction SilentlyContinue)) {
     Write-Host "Node.js уже установлен." -ForegroundColor Green
 }
 
-Write-Host "Проверка Git..." -ForegroundColor Yellow
+# Проверяем и устанавливаем Git
 if (-not (Get-Command git -ErrorAction SilentlyContinue)) {
     Write-Host "Git не найден. Скачиваем и устанавливаем..." -ForegroundColor Yellow
     $gitUrl = "https://github.com/git-for-windows/git/releases/download/v2.47.0.windows.1/Git-2.47.0-64-bit.exe"
@@ -43,6 +43,7 @@ if (-not (Get-Command git -ErrorAction SilentlyContinue)) {
     Write-Host "Git уже установлен." -ForegroundColor Green
 }
 
+# Клонируем или обновляем репозиторий
 $InstallDir = "$env:USERPROFILE\Documents\dreamworld-bot"
 $RepoUrl = "https://github.com/Xryakva/Tetst.git"
 
@@ -55,17 +56,20 @@ if (Test-Path $InstallDir) {
     Set-Location $InstallDir
 }
 
+# Устанавливаем зависимости
 if (-not (Test-Path "node_modules")) {
     Write-Host "Установка зависимостей..." -ForegroundColor Yellow
     npm install
 }
 
+# Устанавливаем PM2
 if (-not (Get-Command pm2 -ErrorAction SilentlyContinue)) {
     Write-Host "Установка PM2..." -ForegroundColor Yellow
     npm install -g pm2
     Update-Path
 }
 
+# Запускаем бота
 Write-Host "Запуск бота через PM2..." -ForegroundColor Yellow
 pm2 stop dreamworld-bot 2>$null
 pm2 delete dreamworld-bot 2>$null
