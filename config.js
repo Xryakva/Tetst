@@ -1,0 +1,1 @@
+module.exports = { host: 'mc.dreamworld.pw', port: 25565, payTarget: 'Xryakva', indexFile: 'indx.txt', maxBots: 4, registerAttempts: 10, minUsernameLength: 8, maxUsernameLength: 12, passwordLength: 16, shopClicks: [ { slot: 22, clicks: 1 }, { slot: 41, clicks: 2 } ], clearInventory: true, warpAuraAfterPurchase: true };
