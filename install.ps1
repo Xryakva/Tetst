@@ -1,53 +1,44 @@
-$ErrorActionPreference = "Continue"
-function Update-Path { $env:Path = [System.Environment]::GetEnvironmentVariable("Path","Machine") + ";" + [System.Environment]::GetEnvironmentVariable("Path","User") }
+# install.ps1 – полностью автономная установка бота
+$ErrorActionPreference = "Stop"
 
-Write-Host "Начинаем установку DreamWorld Bot..." -ForegroundColor Cyan
+function Update-Path {
+    $env:Path = [System.Environment]::GetEnvironmentVariable("Path","Machine") + ";" + [System.Environment]::GetEnvironmentVariable("Path","User")
+}
 
 # Проверяем и устанавливаем Node.js
 if (-not (Get-Command node -ErrorAction SilentlyContinue)) {
-    Write-Host "Node.js не найден. Скачиваем и устанавливаем..." -ForegroundColor Yellow
-    $nodeUrl = "https://nodejs.org/dist/v20.18.1/node-v20.18.1-x64.msi"
-    $nodeInstaller = "$env:TEMP\node.msi"
-    try {
+    Write-Host "Node.js не найден. Устанавливаем..."
+    if (Get-Command winget -ErrorAction SilentlyContinue) {
+        winget install OpenJS.NodeJS --silent --accept-package-agreements
+    } else {
+        $nodeUrl = "https://nodejs.org/dist/v20.18.1/node-v20.18.1-x64.msi"
+        $nodeInstaller = "$env:TEMP\node.msi"
         Invoke-WebRequest -Uri $nodeUrl -OutFile $nodeInstaller -UseBasicParsing
         Start-Process msiexec -ArgumentList "/i `"$nodeInstaller`" /quiet /norestart" -Wait
         Remove-Item $nodeInstaller -Force
-        Update-Path
-        Write-Host "Node.js установлен." -ForegroundColor Green
-    } catch {
-        Write-Host "Ошибка установки Node.js: $_" -ForegroundColor Red
-        Read-Host "Нажмите Enter для выхода"
-        exit 1
     }
-} else {
-    Write-Host "Node.js уже установлен." -ForegroundColor Green
+    Update-Path
 }
 
 # Проверяем и устанавливаем Git
 if (-not (Get-Command git -ErrorAction SilentlyContinue)) {
-    Write-Host "Git не найден. Скачиваем и устанавливаем..." -ForegroundColor Yellow
-    $gitUrl = "https://github.com/git-for-windows/git/releases/download/v2.47.0.windows.1/Git-2.47.0-64-bit.exe"
-    $gitInstaller = "$env:TEMP\git.exe"
-    try {
+    Write-Host "Git не найден. Устанавливаем..."
+    if (Get-Command winget -ErrorAction SilentlyContinue) {
+        winget install Git.Git --silent --accept-package-agreements
+    } else {
+        $gitUrl = "https://github.com/git-for-windows/git/releases/download/v2.47.0.windows.1/Git-2.47.0-64-bit.exe"
+        $gitInstaller = "$env:TEMP\git.exe"
         Invoke-WebRequest -Uri $gitUrl -OutFile $gitInstaller -UseBasicParsing
         Start-Process -FilePath $gitInstaller -ArgumentList "/VERYSILENT /NORESTART /SUPPRESSMSGBOXES" -Wait
         Remove-Item $gitInstaller -Force
-        Update-Path
-        Write-Host "Git установлен." -ForegroundColor Green
-    } catch {
-        Write-Host "Ошибка установки Git: $_" -ForegroundColor Red
-        Read-Host "Нажмите Enter для выхода"
-        exit 1
     }
-} else {
-    Write-Host "Git уже установлен." -ForegroundColor Green
+    Update-Path
 }
 
-# Клонируем или обновляем репозиторий
 $InstallDir = "$env:USERPROFILE\Documents\dreamworld-bot"
 $RepoUrl = "https://github.com/Xryakva/Tetst.git"
 
-Write-Host "Клонирование/обновление репозитория..." -ForegroundColor Yellow
+# Клонируем или обновляем репозиторий
 if (Test-Path $InstallDir) {
     Set-Location $InstallDir
     git pull
@@ -56,27 +47,25 @@ if (Test-Path $InstallDir) {
     Set-Location $InstallDir
 }
 
-# Устанавливаем зависимости
+# Устанавливаем зависимости (npm уже должен быть виден)
 if (-not (Test-Path "node_modules")) {
-    Write-Host "Установка зависимостей..." -ForegroundColor Yellow
+    Write-Host "Установка зависимостей..."
     npm install
 }
 
 # Устанавливаем PM2
 if (-not (Get-Command pm2 -ErrorAction SilentlyContinue)) {
-    Write-Host "Установка PM2..." -ForegroundColor Yellow
+    Write-Host "Установка PM2..."
     npm install -g pm2
     Update-Path
 }
 
-# Запускаем бота
-Write-Host "Запуск бота через PM2..." -ForegroundColor Yellow
-pm2 stop dreamworld-bot 2>$null
-pm2 delete dreamworld-bot 2>$null
-pm2 start server.js --name dreamworld-bot
-pm2 save
+# Запускаем бота через PM2
+Write-Host "Запуск бота..."
+cmd /c "pm2 stop dreamworld-bot 2>nul"
+cmd /c "pm2 delete dreamworld-bot 2>nul"
+cmd /c "pm2 start server.js --name dreamworld-bot"
+cmd /c "pm2 save"
 
-Write-Host "Бот успешно запущен!" -ForegroundColor Green
-Write-Host "Проверьте статус: pm2 status" -ForegroundColor Cyan
-Read-Host "Нажмите Enter для выхода"
+Write-Host "Бот успешно запущен!"
 exit
